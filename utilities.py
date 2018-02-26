@@ -37,4 +37,4 @@ def stringify(x):
 
 # return info on item from article id
 def get_info(x, artId):
-	return x[x['Artikelid'] == artId]['Namn']
+	return x[x['Artikelid'] == artId] #['Namn']
