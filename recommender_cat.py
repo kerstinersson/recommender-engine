@@ -1,14 +1,5 @@
 # content based recommender engine for categorical/text data
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
-
-# import utitily functions
-from utilities import *
-
 '''
 HANDLE DATA
 '''
@@ -51,10 +42,10 @@ def recommend(art_number, sim = sim):
 	# get index of wine
 	idx = indices[art_number]
 
-	# Get the pairwise similarity scores of all movies with that movie
+	# Get the pairwise similarity scores of all wines with that wine
 	sim_scores = list(enumerate(sim[idx]))
 
-    # Sort the movies based on the similarity scores
+    # Sort the wines based on the similarity scores
 	sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
 
     # Get the scores of the 5 most similar wines
@@ -63,7 +54,7 @@ def recommend(art_number, sim = sim):
     # Get the movie indices
 	wine_indices = [i[0] for i in sim_scores]
 
-    # Return the top 5 most similar movies
+    # Return the top 5 most similar wines
 	return df['Artikelid'].iloc[wine_indices]
 
 '''
