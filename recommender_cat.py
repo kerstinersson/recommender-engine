@@ -42,8 +42,6 @@ def init_rs():
 	df = df.reset_index()
 	indices = pd.Series(df.index, index=df['Artikelid']).drop_duplicates()
 
-
-
 '''
 RECOMMENDER ENGINE
 '''
@@ -82,10 +80,10 @@ def recommend(art_number):
 	# get index of wine
 	idx = indices[art_number]
 
-	# Get the pairwise similarity scores of all wines with that wine
+	# Get the pairwise similarity scores of all movies with that movie
 	sim_scores = list(enumerate(sim[idx]))
 
-    # Sort the wines based on the similarity scores
+    # Sort the movies based on the similarity scores
 	sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
 
     # Get the scores of the 5 most similar wines
