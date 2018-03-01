@@ -47,4 +47,3 @@ def get_id(x, artNr):
 def get_nr(x, artId):
 	return x.loc[x['Artikelid'] == artId, 'Varnummer'].iloc[0]
 
-

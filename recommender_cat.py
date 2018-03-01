@@ -111,3 +111,4 @@ MAIN
 # 		if not info['RavarorBeskrivning'].isnull:
 # 			to_print += ", Ravaror: " + info['RavarorBeskrivning']
 # 		print(to_print)
+
