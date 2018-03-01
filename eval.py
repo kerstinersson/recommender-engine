@@ -9,15 +9,5 @@ from sklearn.feature_extraction.text import CountVectorizer
 from utilities import *
 from recommender_cat import *
 
-# select 10 different wines to run the test on
-test_wines = []
-
-# run the recommender engine for these wines
-
-# calculate correctness of recommendations
-
-# precision
-
-# coverage
-
-# diversity
+# ten wines to test
+test = ['7904', '7424',]
