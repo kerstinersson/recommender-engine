@@ -37,7 +37,6 @@ def stringify(x):
 
 # return info on item from article id
 def get_info(x, artId):
-<<<<<<< HEAD
 	return x[x['Artikelid'] == artId]['Namn']
 
 # return article id
@@ -48,6 +47,4 @@ def get_id(x, artNr):
 def get_nr(x, artId):
 	return x.loc[x['Artikelid'] == artId, 'Varnummer'].iloc[0]
 
-=======
-	return x[x['Artikelid'] == artId] #['Namn']
->>>>>>> Set up basics for a content based recommender system using categorical/text data
+
