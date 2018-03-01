@@ -16,7 +16,7 @@ data = indata.copy().loc[indata['Varugrupp'].isin(['Vitt vin', 'Rott vin', 'Mous
 data = data.loc[data['Utgatt'].isin([0])]
 
 # only keep interesting columns
-cols_to_keep = ['Artikelid', 'Namn', 'Namn2', 'Varugrupp','Prisinklmoms', 'Ursprung', 'Producent', 'Argang', 'Alkoholhalt', 'Typ', 'RavarorBeskrivning']
+cols_to_keep = ['Artikelid', 'Namn', 'Namn2', 'Varugrupp', 'Varnummer','Prisinklmoms', 'Ursprung', 'Producent', 'Argang', 'Alkoholhalt', 'Typ', 'RavarorBeskrivning']
 df = data[cols_to_keep]
 
 # sort out entries that are empty

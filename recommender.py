@@ -3,66 +3,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
+from similarity_grapes import sim_grapes
 
-'''
-UTILITIES
-'''
-
-# clean data
-def clean_data(x):
-	if isinstance(x, str):
-		return str.lower(x.replace(" ", "")) # lower case only and remove spaces
-	else:
-		return ''
-
-# bag of words, turn NaN into string
-def clean2(x):
-	if isinstance(x,str):
-		return str.lower(x)
-	else:
-		return ''
-
-# returns cleaned version of description box
-def clean_descr(x):
-	if isinstance(x, str):
-		# remove percentages
-		res = filter(lambda a: a.isalpha() or a == " ", x)
-
-		# write cabernets and pinots as one word to avoid confusion, remove stop words
-		repls = ("pinot ", "pinot"), ("cabernet ", "cabernet"), ("och", "")
-		return reduce(lambda a, kv: a.replace(*kv), repls, res)
-	else: 
-		return ''
-
-# make string with keywords
-def stringify(x):
-	#return x['Ursprung'] + ' ' + x['Producent'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
-	return x['Ursprung'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
-
-# return info on item from article id
-def get_info(x, artId):
-	return x[x['Artikelid'] == artId]['Namn']
+from utilities import *
 
 '''
 HANDLE DATA
 '''
-
-'''
-# read csv file
-indata = pd.read_csv('../Dataset/Systembolaget/sort_sb1.csv')
-
-# filter out wines only
-data = indata.copy().loc[indata['Varugrupp'].isin(['Vitt vin', 'Rott vin', 'Mousserande vin'])]
-
-# filter out wines that are no longer in selection
-data = data.loc[data['Utgatt'].isin([0])]
-
-# only keep interesting columns
-cols_to_keep = ['Artikelid', 'Namn', 'Namn2', 'Varugrupp','Prisinklmoms', 'Ursprung', 'Producent', 'Argang', 'Alkoholhalt', 'Typ', 'RavarorBeskrivning']
-df = data[cols_to_keep]
-
-# sort out entries that are empty
-df = df[pd.notnull(df.Typ)]'''
 
 # read csv file
 data = pd.read_csv('./rev_sysb.csv')
