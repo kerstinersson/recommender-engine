@@ -38,3 +38,12 @@ def stringify(x):
 # return info on item from article id
 def get_info(x, artId):
 	return x[x['Artikelid'] == artId]['Namn']
+
+# return article id
+def get_id(x, artNr):
+	return x.loc[x['Varnummer'] == artNr, 'Artikelid'].iloc[0]
+
+# return article nr
+def get_nr(x, artId):
+	return x.loc[x['Artikelid'] == artId, 'Varnummer'].iloc[0]
+
