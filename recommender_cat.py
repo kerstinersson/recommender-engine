@@ -52,7 +52,7 @@ RECOMMENDER ENGINE
 def recommend(art_number):
 
 	# read csv file
-	data = pd.read_csv('./rev_sysb.csv')
+	data = pd.read_csv('../data/rev_sysb.csv')
 
 	# clean string columns
 	features_to_clean = ['Ursprung', 'Producent', 'Typ', 'Varugrupp'] # removed Namn2 and RavarorBeskrivning for special cleaning

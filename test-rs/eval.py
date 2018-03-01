@@ -13,7 +13,7 @@ def test_rs():
 	# ten wines to test
 	test = [7904, 7424, 7602, 77152, 5352, 2800]
 
-	artid = pd.read_csv('./artnr_artid.csv')
+	artid = pd.read_csv('../data/artnr_artid.csv')
 	ids = []
 
 	for item in test:
