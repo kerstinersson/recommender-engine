@@ -35,6 +35,10 @@ def stringify(x):
 	#return x['Ursprung'] + ' ' + x['Producent'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
 	return x['Ursprung'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
 
+# merge name and name2 into one feature
+def merge_name(x):
+	return x ['Namn'] + ' ' + x['Namn2']
+
 # return info on item from article id
 def get_info(x, artId):
 	return x[x['Artikelid'] == artId]['Namn']

@@ -58,7 +58,7 @@ lookup = {
 # takes two types of grapes and returns their similarity measure
 def sim_wines(w1, w2):
 	if w1 is None or w2 is None:
-		print("No type of wine given...")
+		#print("No type of wine given...")
 		return 0
 	else:
 		if w1 in lookup:
