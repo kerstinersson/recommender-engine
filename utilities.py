@@ -21,6 +21,9 @@ def bag_of_words(x):
 # returns cleaned version of description box
 def clean_descr(x):
 	if isinstance(x, str):
+
+		x = str.lower(x)
+
 		# remove percentages
 		res = filter(lambda a: a.isalpha() or a == " ", x)
 
