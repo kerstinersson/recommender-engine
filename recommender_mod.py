@@ -22,9 +22,10 @@ class RecommenderEngine():
 		# read csv file
 		data = pd.read_csv(self.data_file)
 
-		self.clean_data = self.prep_data(data.copy())
+		self.clean_data, self.sim = self.prep_data(data.copy())
 
-		self.sim_mat, self.indices = self.sim_matrix()
+		self.indices = self.get_indices()
+		self.sim_mat = self.sim_matrix()
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -48,10 +49,31 @@ class RecommenderEngine():
 		# merge name and name2 into one feature
 		df['name'] = df.apply(merge_name, axis=1)
 
+		# stringify namn, producent, typ, varugrupp
+		df['text'] = df.apply(stringify_mod, axis=1)
+
+		count = CountVectorizer(stop_words='english')
+		count_matrix = count.fit_transform(df['text'])
+
+		# similarity function
+		sim = cosine_similarity(count_matrix, count_matrix)
+
 		# clean description
 		df['RavarorBeskrivning'] = df['RavarorBeskrivning'].apply(clean_descr)
 
-		return df
+		return df, sim
+
+	def get_indices(self):
+		df = self.clean_data
+
+		# store all article IDs
+		artIds = df['Artikelid'].values
+		ids = range(artIds.size)
+
+		#self.sim_mat = sim_mat
+		indices = dict(zip(artIds,ids))
+
+		return indices
 
 	def sim_matrix(self):
 		# get data
@@ -74,29 +96,34 @@ class RecommenderEngine():
 				#print(d[i], d[j])
 			print(i)
 
-		#self.sim_mat = sim_mat
-		indices = dict(zip(artIds,ids))
-
-		return sim_mat, indices
+		return sim_mat
 
 	def calc_sim(self, wine1, wine2):
 		# compare six features: name, group, type, grapes, producer, origin
 		total_score = 0
-		max_score = 6
+		max_score = 5
 
+		indices = self.indices
 		data = self.clean_data 
 
 		# calc similarities for all features
+		# text features: typ, producent, namn
+		idx1 = indices[wine1]
+		idx2 = indices[wine2]
+		total_score += self.sim[idx1][idx2]
 
-		# description
+		# RavarorBeskrivning
 		d1 = data[data['Artikelid'] == wine1]['RavarorBeskrivning'].to_string(index = False)
 		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
 
 		total_score += sim_wines(d1,d2)
 
-		normalize_score = total_score/max_score
+		# Ursprung
+		# skapa anpassat matt
+		# normalize score
+		norm_score = total_score/max_score
 
-		return normalize_score
+		return norm_score
 
 	# takes article number as input and outputs a list of recommended article numbers
 	def recommend(self, art_number):
