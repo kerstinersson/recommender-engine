@@ -27,6 +27,10 @@ class RecommenderEngine():
 		self.indices = self.get_indices()
 		self.sim_mat = self.sim_matrix()
 
+		# store similarity matrix
+		df = pd.DataFrame(self.sim_mat)
+		df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
 
@@ -119,7 +123,11 @@ class RecommenderEngine():
 		total_score += sim_wines(d1,d2)
 
 		# Ursprung
-		# skapa anpassat matt
+		reg1 = data[data['Artikelid'] == wine1]['Ursprung'].to_string(index = False)
+		reg2 = data[data['Artikelid'] == wine2]['Ursprung'].to_string(index = False)
+
+		# TODO: add function call to similarity_regions
+
 		# normalize score
 		norm_score = total_score/max_score
 
@@ -153,12 +161,13 @@ class RecommenderEngine():
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	wine1 = 1006372
-	wine2 = 1021015
-	rs.sim_matrix()
-	#rs.calc_sim(wine1, wine2)
+	#wine1 = 1006372
+	#wine2 = 1021015
+	# print(rs.clean_data.Ursprung.unique())
+	# rs.sim_matrix()
+	# rs.calc_sim(wine1, wine2)
 	# data = rs.data.copy()
 	# new_data = rs.prep_data(data)
 	# print(new_data.head(3))
-	#recommend(1009797, rs)
+	#print(recommend(1009797))
 
