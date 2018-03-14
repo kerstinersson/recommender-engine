@@ -5,10 +5,13 @@ import pandas as pd
 import missingno as msno
 import networkx as nx
 import sys
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 sys.path.append('../../recommender-engine/')
 
 from pandas.tools.plotting import table
+from pandas.plotting import parallel_coordinates
 from similarity_grapes import *
 
 # standard figure size
@@ -72,17 +75,24 @@ def build_network(matrix):
 	nx.draw_networkx_nodes(G, pos, node_size = 700)
 
 	# edges
-	nx.draw_networkx_edges(G, pos, edgelist = e25, width = 4, edge_color = 'y')
-	nx.draw_networkx_edges(G, pos, edgelist = e50, width = 4, edge_color = 'b')
-	nx.draw_networkx_edges(G, pos, edgelist = e75, width = 4, edge_color = 'r')
-	nx.draw_networkx_edges(G, pos, edgelist = e100, width = 4, edge_color = 'g')
+	nx.draw_networkx_edges(G, pos, edgelist = e25, width = 2, edge_color = 'y')
+	nx.draw_networkx_edges(G, pos, edgelist = e50, width = 2, edge_color = 'b')
+	nx.draw_networkx_edges(G, pos, edgelist = e75, width = 2, edge_color = 'r')
+	nx.draw_networkx_edges(G, pos, edgelist = e100, width = 2, edge_color = 'g')
 
 	# labels
 	nx.draw_networkx_labels(G, pos)
 
-	#plt.axis('off')
-	#plt.show()
+	return G
 
+def parallel_coords(data):
+	plt.figure()
+	parallel_coordinates(data, 'Namn')
+
+	return 0
+
+def origin(data):
+	#df = data['UrsprungLand'].value_counts(sort=True)
 
 
 # read csv file
@@ -92,6 +102,13 @@ if __name__ == '__main__':
 	#style(data)
 	#types(data)
 	#null_pattern(data)
-	matrix = mat_grapes()
-	build_network(matrix)
+	#matrix = mat_grapes()
+	#net = build_network(matrix)
+
+	#print(sorted(d for n, d in net.degree()))
+	#nx.draw(net, with_labels=False, font_weight='bold')
+
+	#parallel_coords(data)
+
+	#plt.show()
 
