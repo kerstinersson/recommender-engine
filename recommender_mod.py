@@ -27,11 +27,11 @@ class RecommenderEngine():
 		self.clean_data, self.sim = self.prep_data(data.copy())
 
 		self.indices = self.get_indices()
-		#self.sim_mat = self.sim_matrix()
+		self.sim_mat = self.sim_matrix()
 
 		# store similarity matrix
-		#df = pd.DataFrame(self.sim_mat)
-		#df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+		# df = pd.DataFrame(self.sim_mat)
+		# df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -93,6 +93,7 @@ class RecommenderEngine():
 		# matrix of zeros
 		sim_mat = np.zeros((artIds.size, artIds.size))
 
+		# assemble similarity matrix
 		for i in ids:
 			sim_mat[i][i] = 1 # diagonal items, always =1!
 
@@ -134,11 +135,15 @@ class RecommenderEngine():
 
 		# TODO: add function call to similarity_regions
 
-		# Ar
+		# Ar, only taken into account if both vintages are available
 		y1 = data[data['Artikelid'] == wine1]['Argang'].to_string(index = False)
 		y2 = data[data['Artikelid'] == wine2]['Argang'].to_string(index = False)
 
-		total_score += sim_years(y1, y2, reg1, reg2, year_data)
+		simyear = sim_years(y1, y2, reg1, reg2, year_data)
+
+		if simyear != 0:
+			total_score += simyear
+			max_score += 1 # add one more feature to add to max score
 
 		# normalize score
 		norm_score = total_score/max_score

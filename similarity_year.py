@@ -14,7 +14,7 @@ def sim_years(y1, y2, region1, region2, x):
 		return sim
 	else:
 		# region not in list, return a mean
-		return 0.5
+		return 0
 
 
 # if __name__ == '__main__':
