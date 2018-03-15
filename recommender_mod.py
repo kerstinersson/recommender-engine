@@ -9,6 +9,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from utilities import *
 #from recommender_mod import *
 from similarity_grapes import *
+from similarity_year import *
 
 '''
 HANDLE DATA
@@ -17,6 +18,7 @@ HANDLE DATA
 class RecommenderEngine():
 
 	data_file = './data/rev_sysb.csv'
+	year_file = './data/year.csv'
 
 	def __init__(self):
 		# read csv file
@@ -25,11 +27,11 @@ class RecommenderEngine():
 		self.clean_data, self.sim = self.prep_data(data.copy())
 
 		self.indices = self.get_indices()
-		self.sim_mat = self.sim_matrix()
+		#self.sim_mat = self.sim_matrix()
 
 		# store similarity matrix
-		df = pd.DataFrame(self.sim_mat)
-		df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+		#df = pd.DataFrame(self.sim_mat)
+		#df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -110,6 +112,10 @@ class RecommenderEngine():
 		indices = self.indices
 		data = self.clean_data 
 
+		# data set on vintages
+		year_data = pd.read_csv(self.year_file, sep=";")
+		year_data['Region'] = year_data['Region'].apply(clean_data)
+
 		# calc similarities for all features
 		# text features: typ, producent, namn
 		idx1 = indices[wine1]
@@ -127,6 +133,12 @@ class RecommenderEngine():
 		reg2 = data[data['Artikelid'] == wine2]['Ursprung'].to_string(index = False)
 
 		# TODO: add function call to similarity_regions
+
+		# Ar
+		y1 = data[data['Artikelid'] == wine1]['Argang'].to_string(index = False)
+		y2 = data[data['Artikelid'] == wine2]['Argang'].to_string(index = False)
+
+		total_score += sim_years(y1, y2, reg1, reg2, year_data)
 
 		# normalize score
 		norm_score = total_score/max_score
@@ -161,8 +173,9 @@ class RecommenderEngine():
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	#wine1 = 1006372
-	#wine2 = 1021015
+	# wine1 = 1006372
+	# wine2 = 1021015
+	# rs.calc_sim(wine1,wine2)
 	# print(rs.clean_data.Ursprung.unique())
 	# rs.sim_matrix()
 	# rs.calc_sim(wine1, wine2)
