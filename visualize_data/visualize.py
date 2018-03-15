@@ -5,8 +5,8 @@ import pandas as pd
 import missingno as msno
 import networkx as nx
 import sys
-import plotly.plotly as py
-import plotly.graph_objs as go
+#import plotly as py
+#import plotly.graph_objs as go
 
 sys.path.append('../../recommender-engine/')
 
@@ -92,13 +92,19 @@ def parallel_coords(data):
 	return 0
 
 def origin(data):
-	#df = data['UrsprungLand'].value_counts(sort=True)
+	# data to visualize origin of wines in data set
+	df = data['Ursprunglandnamn'].value_counts(sort=True)
+	print(df)
 
 
 # read csv file
-data = pd.read_csv('../rev_sysb.csv')
+data = pd.read_csv('../data/rev_sysb.csv')
 
 if __name__ == '__main__':
+
+
+
+	#origin(data)
 	#style(data)
 	#types(data)
 	#null_pattern(data)
