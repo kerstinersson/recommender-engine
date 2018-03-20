@@ -108,7 +108,7 @@ class RecommenderEngine():
 	def calc_sim(self, wine1, wine2):
 		# compare six features: name, group, type, grapes, producer, origin
 		total_score = 0
-		max_score = 5
+		max_score = 4 # 4 features are always present
 
 		indices = self.indices
 		data = self.clean_data 
@@ -127,7 +127,10 @@ class RecommenderEngine():
 		d1 = data[data['Artikelid'] == wine1]['RavarorBeskrivning'].to_string(index = False)
 		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
 
-		total_score += sim_wines(d1,d2)
+		# checks similarity if both wines have descriptions
+		if d1 != "" and d2 != "":
+			total_score += sim_wines(d1,d2)
+			max_score += 1
 
 		# Ursprung
 		reg1 = data[data['Artikelid'] == wine1]['Ursprung'].to_string(index = False)
@@ -176,6 +179,8 @@ class RecommenderEngine():
 		# Return the top 5 most similar wines
 		return data['Artikelid'].iloc[wine_indices]
 
+
+
 if __name__ == '__main__':
 	rs = RecommenderEngine()
 	# wine1 = 1006372
@@ -188,4 +193,3 @@ if __name__ == '__main__':
 	# new_data = rs.prep_data(data)
 	# print(new_data.head(3))
 	#print(recommend(1009797))
-
