@@ -7,9 +7,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 # import utitily functions
 from utilities import *
-#from recommender_mod import *
 from similarity_grapes import *
 from similarity_year import *
+from similarity_regions import * 
 
 '''
 HANDLE DATA
@@ -30,8 +30,8 @@ class RecommenderEngine():
 		self.sim_mat = self.sim_matrix()
 
 		# store similarity matrix
-		# df = pd.DataFrame(self.sim_mat)
-		# df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+		df = pd.DataFrame(self.sim_mat)
+		df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -136,17 +136,27 @@ class RecommenderEngine():
 		reg1 = data[data['Artikelid'] == wine1]['Ursprung'].to_string(index = False)
 		reg2 = data[data['Artikelid'] == wine2]['Ursprung'].to_string(index = False)
 
-		# TODO: add function call to similarity_regions
+		score = sim_regions(reg1, reg2)
 
+		# adds to total score if regions are in list
+		if score != False:
+			total_score += score
+			max_score += 1
+
+		#.astype(float)
 		# Ar, only taken into account if both vintages are available
-		y1 = data[data['Artikelid'] == wine1]['Argang'].to_string(index = False)
-		y2 = data[data['Artikelid'] == wine2]['Argang'].to_string(index = False)
+		y1 = str(data[data['Artikelid'] == wine1]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
+		y2 = str(data[data['Artikelid'] == wine2]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
 
-		simyear = sim_years(y1, y2, reg1, reg2, year_data)
+		#print(y1)
+		#print(y2)
 
-		if simyear != 0:
-			total_score += simyear
-			max_score += 1 # add one more feature to add to max score
+		if reg1 != "" and reg2 != "":
+			simyear = sim_years(y1, y2, reg1, reg2, year_data)
+
+			if simyear != 0:
+				total_score += simyear
+				max_score += 1 # add one more feature to add to max score
 
 		# normalize score
 		norm_score = total_score/max_score
