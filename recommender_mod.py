@@ -7,8 +7,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 # import utitily functions
 from utilities import *
-#from recommender_mod import *
 from similarity_grapes import *
+from similarity_year import *
+from similarity_regions import * 
 
 '''
 HANDLE DATA
@@ -17,19 +18,24 @@ HANDLE DATA
 class RecommenderEngine():
 
 	data_file = './data/rev_sysb.csv'
+	year_file = './data/year.csv'
+	sim_file = './data/sim_mat.csv'
 
 	def __init__(self):
 		# read csv file
 		data = pd.read_csv(self.data_file)
+		sim = pd.read_csv(self.sim_file)
+
+		self.sim_mat = sim.as_matrix(columns = None)
 
 		self.clean_data, self.sim = self.prep_data(data.copy())
 
 		self.indices = self.get_indices()
-		self.sim_mat = self.sim_matrix()
+		#self.sim_mat = self.sim_matrix()
 
 		# store similarity matrix
-		df = pd.DataFrame(self.sim_mat)
-		df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+		#df = pd.DataFrame(self.sim_mat)
+		#df.to_csv('./data/sim_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -91,6 +97,7 @@ class RecommenderEngine():
 		# matrix of zeros
 		sim_mat = np.zeros((artIds.size, artIds.size))
 
+		# assemble similarity matrix
 		for i in ids:
 			sim_mat[i][i] = 1 # diagonal items, always =1!
 
@@ -105,10 +112,14 @@ class RecommenderEngine():
 	def calc_sim(self, wine1, wine2):
 		# compare six features: name, group, type, grapes, producer, origin
 		total_score = 0
-		max_score = 5
+		max_score = 4 # 4 features are always present
 
 		indices = self.indices
 		data = self.clean_data 
+
+		# data set on vintages
+		year_data = pd.read_csv(self.year_file, sep=";")
+		year_data['Region'] = year_data['Region'].apply(clean_data)
 
 		# calc similarities for all features
 		# text features: typ, producent, namn
@@ -120,13 +131,36 @@ class RecommenderEngine():
 		d1 = data[data['Artikelid'] == wine1]['RavarorBeskrivning'].to_string(index = False)
 		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
 
-		total_score += sim_wines(d1,d2)
+		# checks similarity if both wines have descriptions
+		if d1 != "" and d2 != "":
+			total_score += sim_wines(d1,d2)
+			max_score += 1
 
 		# Ursprung
 		reg1 = data[data['Artikelid'] == wine1]['Ursprung'].to_string(index = False)
 		reg2 = data[data['Artikelid'] == wine2]['Ursprung'].to_string(index = False)
 
-		# TODO: add function call to similarity_regions
+		score = sim_regions(reg1, reg2)
+
+		# adds to total score if regions are in list
+		if score != False:
+			total_score += score
+			max_score += 1
+
+		#.astype(float)
+		# Ar, only taken into account if both vintages are available
+		y1 = str(data[data['Artikelid'] == wine1]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
+		y2 = str(data[data['Artikelid'] == wine2]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
+
+		#print(y1)
+		#print(y2)
+
+		if reg1 != "" and reg2 != "":
+			simyear = sim_years(y1, y2, reg1, reg2, year_data)
+
+			if simyear != 0:
+				total_score += simyear
+				max_score += 1 # add one more feature to add to max score
 
 		# normalize score
 		norm_score = total_score/max_score
@@ -145,7 +179,7 @@ class RecommenderEngine():
 		idx = indices[art_number]
 
 		# Get the pairwise similarity scores of all wines with that wine
-		sim_scores = list(enumerate(sim_mat[idx]))
+		sim_scores = list(enumerate(sim[idx]))
 
 		# Sort the wines based on the similarity scores
 		sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
@@ -156,18 +190,27 @@ class RecommenderEngine():
 		# Get the wine indices
 		wine_indices = [i[0] for i in sim_scores]
 
+		i = 0
+
+		for ind in wine_indices:
+			print("Recommended: " + str(data['Artikelid'].iloc[ind]) + " (score:" + str(sim_scores[i]) + ")")
+			i += 1
+
 		# Return the top 5 most similar wines
 		return data['Artikelid'].iloc[wine_indices]
 
+
+
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	#wine1 = 1006372
-	#wine2 = 1021015
+	#print(rs.sim_mat)
+	# wine1 = 1006372
+	# wine2 = 1021015
+	# rs.calc_sim(wine1,wine2)
 	# print(rs.clean_data.Ursprung.unique())
 	# rs.sim_matrix()
 	# rs.calc_sim(wine1, wine2)
 	# data = rs.data.copy()
 	# new_data = rs.prep_data(data)
 	# print(new_data.head(3))
-	#print(recommend(1009797))
-
+	rs.recommend(1009797)
