@@ -19,19 +19,23 @@ class RecommenderEngine():
 
 	data_file = './data/rev_sysb.csv'
 	year_file = './data/year.csv'
+	sim_file = './data/sim_mat.csv'
 
 	def __init__(self):
 		# read csv file
 		data = pd.read_csv(self.data_file)
+		sim = pd.read_csv(self.sim_file)
+
+		self.sim_mat = sim.as_matrix(columns = None)
 
 		self.clean_data, self.sim = self.prep_data(data.copy())
 
 		self.indices = self.get_indices()
-		self.sim_mat = self.sim_matrix()
+		#self.sim_mat = self.sim_matrix()
 
 		# store similarity matrix
-		df = pd.DataFrame(self.sim_mat)
-		df.to_csv('sim_mat.csv', encoding='utf-8', index=False)
+		#df = pd.DataFrame(self.sim_mat)
+		#df.to_csv('./data/sim_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -175,7 +179,7 @@ class RecommenderEngine():
 		idx = indices[art_number]
 
 		# Get the pairwise similarity scores of all wines with that wine
-		sim_scores = list(enumerate(sim_mat[idx]))
+		sim_scores = list(enumerate(sim[idx]))
 
 		# Sort the wines based on the similarity scores
 		sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
@@ -186,6 +190,12 @@ class RecommenderEngine():
 		# Get the wine indices
 		wine_indices = [i[0] for i in sim_scores]
 
+		i = 0
+
+		for ind in wine_indices:
+			print("Recommended: " + str(data['Artikelid'].iloc[ind]) + " (score:" + str(sim_scores[i]) + ")")
+			i += 1
+
 		# Return the top 5 most similar wines
 		return data['Artikelid'].iloc[wine_indices]
 
@@ -193,6 +203,7 @@ class RecommenderEngine():
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
+	#print(rs.sim_mat)
 	# wine1 = 1006372
 	# wine2 = 1021015
 	# rs.calc_sim(wine1,wine2)
@@ -202,4 +213,4 @@ if __name__ == '__main__':
 	# data = rs.data.copy()
 	# new_data = rs.prep_data(data)
 	# print(new_data.head(3))
-	#print(recommend(1009797))
+	rs.recommend(1009797)
