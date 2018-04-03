@@ -21,6 +21,9 @@ def bag_of_words(x):
 # returns cleaned version of description box
 def clean_descr(x):
 	if isinstance(x, str):
+
+		x = str.lower(x)
+
 		# remove percentages
 		res = filter(lambda a: a.isalpha() or a == " ", x)
 
@@ -35,6 +38,14 @@ def stringify(x):
 	#return x['Ursprung'] + ' ' + x['Producent'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
 	return x['Ursprung'] + ' ' + x['Typ'] + ' ' + x['RavarorBeskrivning'] + ' ' + x['Varugrupp'] + ' ' + x['Namn'] + ' ' + x['Namn2']
 
+# make string with keywords, modified
+def stringify_mod(x):
+	return x['Typ'] + ' ' + x['Varugrupp'] + ' ' + x['name']
+
+# merge name and name2 into one feature
+def merge_name(x):
+	return x ['Namn'] + ' ' + x['Namn2']
+
 # return info on item from article id
 def get_info(x, artId):
 	return x[x['Artikelid'] == artId]['Namn']
@@ -46,4 +57,3 @@ def get_id(x, artNr):
 # return article nr
 def get_nr(x, artId):
 	return x.loc[x['Artikelid'] == artId, 'Varnummer'].iloc[0]
-
