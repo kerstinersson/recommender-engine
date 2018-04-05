@@ -20,19 +20,26 @@ class RecommenderEngine():
 
 	data_file = './data/rev_sysb.csv'
 	year_file = './data/year.csv'
-	sim_file = './data/sim_mat.csv'
+	#sim_file = './data/sim_mat.csv'
 
 	def __init__(self):
 		# read csv file
 		data = pd.read_csv(self.data_file)
-		sim = pd.read_csv(self.sim_file)
+		#sim = pd.read_csv(self.sim_file)
+		year_data = pd.read_csv(self.year_file, sep=";")
 
-		self.sim_mat = sim.as_matrix(columns = None)
+		# data set on vintages
+		year_data['Region'] = year_data['Region'].apply(clean_data)
+
+		#self.sim_mat = sim.as_matrix(columns = None)
 
 		self.clean_data, self.sim = self.prep_data(data.copy())
+		self.year_data = year_data
 
 		self.indices = self.get_indices()
-		self.sim_mat = self.sim_matrix()
+		self.mod_mat = self.mod_matrix()
+
+		self.sim_mat = self.mod_matrix * 1.5 + self.sim * 0.5
 
 		# store similarity matrix
 		df = pd.DataFrame(self.sim_mat)
@@ -86,7 +93,7 @@ class RecommenderEngine():
 
 		return indices
 
-	def sim_matrix(self):
+	def mod_matrix(self):
 		# get data
 		df = self.clean_data
 
@@ -94,6 +101,11 @@ class RecommenderEngine():
 		artIds = df['Artikelid'].values
 		ids = range(artIds.size)
 		d = dict(zip(ids, artIds))
+
+		# load variables
+		indices = self.indices
+		data = self.clean_data 
+		year_data = self.year_data
 		
 		# matrix of zeros
 		sim_mat = np.zeros((artIds.size, artIds.size))
@@ -102,56 +114,89 @@ class RecommenderEngine():
 		for i in ids:
 			sim_mat[i][i] = 1 # diagonal items, always =1!
 
+			# get info about first wine:
+			d1 = data[data['Artikelid'] == d[i]]['RavarorBeskrivning'].to_string(index = False)
+			reg1 = data[data['Artikelid'] == d[i]]['Ursprung'].to_string(index = False)
+			y1 = str(data[data['Artikelid'] == d[i]]['Argang'].iloc[0])
+
+			check_descr = (d1 != "")
+			check_reg = (reg1 != "")
+			check_year = (y1 !="" and check_reg)
+
 			for j in range(i):
-				sim_mat[i][j] = self.calc_sim(d[i], d[j])
+
+				score = 0
+
+				reg2 = data[data['Artikelid'] == d[j]]['Ursprung'].to_string(index = False)
+				check_reg = (check_reg and reg2 != "")
+
+				if check_descr:
+					score += self.sim_descr(d1, data, d[j])
+
+				if check_reg:
+					score += sim_regions(reg1, reg2)
+
+				if check_year:
+					score += self.sim_year(y1, reg1, data, d[j], reg2)
+
+				#sim_mat[i][j] = self.calc_sim(data, year_data, d[i], d1, reg1, y1, d[j])
+				sim_mat[i][j] = score/3
 				sim_mat[j][i] = sim_mat[i][j]
-				#print(d[i], d[j])
 			print(i)
 
 		return sim_mat
 
-	def calc_sim(self, wine1, wine2):
+	def sim_descr(self, d1, data, wine2):
+		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
+		if d2 != "":
+			return sim_wines(d1,d2)
+		else:
+			return 0
+
+	# def sim_reg(reg1, reg2):
+	# 	if reg2 != "":
+	# 		return sim_regions(reg1, reg2)
+	# 	else:
+	# 		return False
+
+	def sim_year(self, y1, reg1, data, wine2, reg2):
+		y2 = str(data[data['Artikelid'] == wine2]['Argang'].iloc[0])
+		if y2 != "" and reg2 != "":
+			return sim_years(y1, y2, reg1, reg2, self.year_data)
+		else:
+			return 0
+
+
+	def calc_sim(self, data, year_data, wine1, d1, reg1, y1, wine2):
 		# compare six features: name, group, type, grapes, producer, origin
 		total_score = 0
-		score_mod = 0
-		max_score = 1 # 1 features are always present
-
-		indices = self.indices
-		data = self.clean_data 
-
-		# data set on vintages
-		year_data = pd.read_csv(self.year_file, sep=";")
-		year_data['Region'] = year_data['Region'].apply(clean_data)
+		max_score = 0 # no features are always present
 
 		# calc similarities for all features
 		# text features: typ, producent, namn
-		idx1 = indices[wine1]
-		idx2 = indices[wine2]
-		total_score += self.sim[idx1][idx2]*0.5
+		#idx1 = indices[wine1]
+		#idx2 = indices[wine2]
+		#total_score += self.sim[idx1][idx2]*0.5
 
-		# RavarorBeskrivning
-		d1 = data[data['Artikelid'] == wine1]['RavarorBeskrivning'].to_string(index = False)
+		# RavarorBeskrivning		
 		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
 
 		# checks similarity if both wines have descriptions
 		if d1 != "" and d2 != "":
-			score_mod += sim_wines(d1,d2)
+			total_score += sim_wines(d1,d2)
 			max_score += 1
 
 		# Ursprung
-		reg1 = data[data['Artikelid'] == wine1]['Ursprung'].to_string(index = False)
 		reg2 = data[data['Artikelid'] == wine2]['Ursprung'].to_string(index = False)
 
 		score = sim_regions(reg1, reg2)
 
 		# adds to total score if regions are in list
 		if score != False:
-			score_mod += score
+			total_score += score
 			max_score += 1
 
-		#.astype(float)
 		# Ar, only taken into account if both vintages are available
-		y1 = str(data[data['Artikelid'] == wine1]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
 		y2 = str(data[data['Artikelid'] == wine2]['Argang'].iloc[0]) #apply(lambda x: "{:.0f}".format(x)) #to_string(index = False)
 
 		#print(y1)
@@ -161,11 +206,11 @@ class RecommenderEngine():
 			simyear = sim_years(y1, y2, reg1, reg2, year_data)
 
 			if simyear != 0:
-				score_mod += simyear
+				total_score += simyear
 				max_score += 1 # add one more feature to add to max score
 
 		# normalize score
-		norm_score = (total_score + score_mod*1.5)/max_score
+		norm_score = total_score/max_score
 
 		return norm_score
 
