@@ -39,11 +39,15 @@ class RecommenderEngine():
 		self.indices = self.get_indices()
 		self.mod_mat = self.mod_matrix()
 
-		self.sim_mat = self.mod_matrix * 1.5 + self.sim * 0.5
+		#self.sim_mat = self.mod_mat * 1.5 + self.sim * 0.5
 
 		# store similarity matrix
-		df = pd.DataFrame(self.sim_mat)
-		df.to_csv('./data/sim_mat.csv', encoding='utf-8', index=False)
+		#df = pd.DataFrame(self.sim_mat)
+		#df.to_csv('./data/sim_mat.csv', encoding='utf-8', index=False)
+
+		# store similarity matrix
+		df = pd.DataFrame(self.mod_mat)
+		df.to_csv('./data/mod_mat.csv', encoding='utf-8', index=False)
 
 		# count = CountVectorizer(stop_words='english')
 		# self.count_matrix = count.fit_transform(df['keywords'])
@@ -264,53 +268,85 @@ class RecommenderEngine():
 
 
 	def test_rs(self):
+		nr_test = 1000
 		# ten wines to test
-		test = [7904, 7424, 7602, 77152, 5352, 2800]
+		#test = [7904, 7424, 7602, 77152, 5352, 2800]
 
 		artid = pd.read_csv('./data/artnr_artid.csv')
-		ids = []
 
-		for item in test:
-			ids.append(get_id(artid, item))
+		ids = artid['Artikelid']
+
+		# randomly sample 10 wines to test
+		ids = ids.sample(n=nr_test)
+
+		#ids = []
+
+		# for item in test:
+		# 	ids.append(get_id(artid, item))
+
+		cov = []
+		av_sim = 0
+		div = 0
 
 		# run recommender for each wine
 		for wine in ids:
-			res = []
-			cov = []
-			div = []
-			av_sim = []
+			#res = []
+			#c = []
 			result = self.recommend(wine)
 			sim_score = self.get_scores(wine)
 			score = zip(*sim_score[1:6])
-			div.append(self.diversity(result.tolist()))
-			print("-----------")
-			cov.append(self.coverage(wine))
-			av_sim.append(np.mean(score[1]))
+			#div.append(self.diversity(result.tolist()))
+			div += self.diversity(result.tolist())
+			#print("-----------")
+			#c.append(self.coverage_thres(wine))
+			#av_sim.append(np.mean(score[1]))
+			av_sim += np.mean(score[1])
 			for item in result: 
-				res.append(get_nr(artid, item))
+				artnr = get_nr(artid, item)
+				#res.append(artnr)
+				if artnr not in cov:
+					cov.append(artnr)
 		
-			print("For article id: " + str(wine))
-			print("Recommendations: ")
-			print(res)
-			print("Average similarity: ")
-			print(av_sim)
-			print("-----------")
-			print("Coverage: ")
-			print(cov)
-			print("-----------")
-			print("Diversity: ")
-			print(div)
+			# print("For article id: " + str(get_nr(artid, wine)))
+			# print("Recommendations: ")
+			# print(res)
+			# print("Average similarity: ")
+			# print(av_sim)
+			# print("-----------")
+			# print("Coverage: ")
+			# print(c)
+			# print("-----------")
+			# print("Diversity: ")
+			# print(div)
+
+		tot_cov = self.coverage(cov)
+		av_sim = av_sim/nr_test
+		av_div = div/nr_test
+
+		print("Testvalues for " + str(nr_test) + " items")
+		print("Average similarity: ")
+		print(av_sim)
+		print("-----------")
+		print("Coverage: ")
+		print(tot_cov)
+		print("-----------")
+		print("Average diversity: ")
+		print(av_div)
 
 		return 0
 
+	# coverage
+	def coverage(self, items):
+		rec_items = float(len(items))
+		tot_items = float(len(self.indices))
+		return rec_items/tot_items
+
 	# calculate coverage
-	def coverage(self, artid):
+	def coverage_thres(self, artid):
 		threshold = 0.29
 
 		# get all similarity scores for a certain wine
 		sim_scores = self.get_scores(artid)
-
-		#a = sim_scores[1,:] > threshold
 
 		# count all scores above a certain value
 		above_thres = filter(lambda x: x[1] > threshold, sim_scores)
@@ -336,5 +372,5 @@ class RecommenderEngine():
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	#rs.test_rs()
+	rs.test_rs()
 

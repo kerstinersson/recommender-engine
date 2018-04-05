@@ -78,43 +78,97 @@ class RecommenderEngine():
 		return self.df['Artikelid'].iloc[wine_indices]
 
 	def test_rs(self):
+		nr_test = 1000
 		# ten wines to test
-		test = [7904, 7424, 7602, 77152, 5352, 2800]
+		#test = [7904, 7424, 7602, 77152, 5352, 2800]
 
 		artid = pd.read_csv('./data/artnr_artid.csv')
-		ids = []
 
-		for item in test:
-			ids.append(get_id(artid, item))
+		ids = artid['Artikelid']
+
+		# randomly sample 10 wines to test
+		ids = ids.sample(n=nr_test)
+
+		#ids = []
+
+		# for item in test:
+		# 	ids.append(get_id(artid, item))
+
+		cov = []
+		av_sim = 0
+		div = 0
 
 		# run recommender for each wine
 		for wine in ids:
-			res = []
-			cov = []
-			div = []
-			av_sim = []
+			#res = []
+			#c = []
 			result = self.recommend(wine)
 			score = zip(*self.sim_scores[1:6])
-			print("-----------")
-			div.append(self.diversity(result.tolist()))
-			cov.append(self.coverage(wine))
-			av_sim.append(np.mean(score[1]))
+			#div.append(self.diversity(result.tolist()))
+			div += self.diversity(result.tolist())
+			#print("-----------")
+			#c.append(self.coverage_thres(wine))
+			#av_sim.append(np.mean(score[1]))
+			av_sim += np.mean(score[1])
 			for item in result: 
-				res.append(get_nr(artid, item))
+				artnr = get_nr(artid, item)
+				#res.append(artnr)
+				if artnr not in cov:
+					cov.append(artnr)
 
-			print("For article id: " + str(wine))
-			print("Recommendations: ")
-			print(res)
-			print("Average similarity: ")
-			print(av_sim)
-			print("-----------")
-			print("Coverage: ")
-			print(cov)
-			print("-----------")
-			print("Diversity: ")
-			print(div)
+		tot_cov = self.coverage(cov)
+		av_sim = av_sim/nr_test
+		av_div = div/nr_test
+
+		print("Testvalues for " + str(nr_test) + " items")
+		print("Average similarity: ")
+		print(av_sim)
+		print("-----------")
+		print("Coverage: ")
+		print(tot_cov)
+		print("-----------")
+		print("Average diversity: ")
+		print(av_div)
 
 		return 0
+
+		# # ten wines to test
+		# test = [7904, 7424, 7602, 77152, 5352, 2800]
+
+		# artid = pd.read_csv('./data/artnr_artid.csv')
+		# ids = []
+
+		# for item in test:
+		# 	ids.append(get_id(artid, item))
+
+		# # run recommender for each wine
+		# for wine in ids:
+		# 	res = []
+		# 	cov = []
+		# 	div = []
+		# 	av_sim = []
+		# 	result = self.recommend(wine)
+		# 	score = zip(*self.sim_scores[1:6])
+		# 	print("-----------")
+		# 	div.append(self.diversity(result.tolist()))
+		# 	cov.append(self.coverage(wine))
+		# 	av_sim.append(np.mean(score[1]))
+		# 	for item in result: 
+		# 		res.append(get_nr(artid, item))
+
+		# 	print("For article id: " + str(wine))
+		# 	print("Recommendations: ")
+		# 	print(res)
+		# 	print("Average similarity: ")
+		# 	print(av_sim)
+		# 	print("-----------")
+		# 	print("Coverage: ")
+		# 	print(cov)
+		# 	print("-----------")
+		# 	print("Diversity: ")
+		# 	print(div)
+
+		# return 0
 
 	# calculate coverage
 	def coverage(self, artid):
@@ -157,7 +211,7 @@ MAIN
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	rs.test_rs()
+	#rs.test_rs()
 # 	rec_input = 1125441 # ripasso della valpolicella
 # 	rec = recommend(rec_input)
 # 	name = get_info(data, rec_input)
