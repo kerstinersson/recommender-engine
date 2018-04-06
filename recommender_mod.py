@@ -18,45 +18,39 @@ HANDLE DATA
 
 class RecommenderEngine():
 
+	# data files
 	data_file = './data/rev_sysb.csv'
 	year_file = './data/year.csv'
-	#sim_file = './data/sim_mat.csv'
+	sim_file = './data/sim_mat.csv'
+	mod_file = './data/mod_mat.csv'
 
-	def __init__(self):
+	# running mode
+	train = True
+
+	def __init__(self, w_mod, w_cat):
 		# read csv file
 		data = pd.read_csv(self.data_file)
-		#sim = pd.read_csv(self.sim_file)
 		year_data = pd.read_csv(self.year_file, sep=";")
+		self.comp = pd.read_csv(self.sim_file).as_matrix(columns = None)
 
-		# data set on vintages
+		# preprocess data
 		year_data['Region'] = year_data['Region'].apply(clean_data)
-
-		#self.sim_mat = sim.as_matrix(columns = None)
-
-		self.clean_data, self.sim = self.prep_data(data.copy())
 		self.year_data = year_data
+		self.clean_data, self.sim = self.prep_data(data.copy())
 
 		self.indices = self.get_indices()
-		self.mod_mat = self.mod_matrix()
 
-		#self.sim_mat = self.mod_mat * 1.5 + self.sim * 0.5
+		if self.train:
+			self.mod_mat = self.mod_matrix()
+			
+			# store similarity matrix
+			df = pd.DataFrame(self.mod_mat)
+			df.to_csv('./data/mod_mat.csv', encoding='utf-8', index=False)
+		else:
+			mod = pd.read_csv(self.mod_file)
+			self.mod_mat = mod.as_matrix(columns = None)
 
-		# store similarity matrix
-		#df = pd.DataFrame(self.sim_mat)
-		#df.to_csv('./data/sim_mat.csv', encoding='utf-8', index=False)
-
-		# store similarity matrix
-		df = pd.DataFrame(self.mod_mat)
-		df.to_csv('./data/mod_mat.csv', encoding='utf-8', index=False)
-
-		# count = CountVectorizer(stop_words='english')
-		# self.count_matrix = count.fit_transform(df['keywords'])
-
-		# # similarity function
-		# self.sim = cosine_similarity(self.count_matrix, self.count_matrix)
-
-		# self.data = df.reset_index()
-		# self.indices = pd.Series(df.index, index=df['Artikelid']).drop_duplicates()
+		self.sim_mat = self.mod_mat * w_mod + self.sim * w_cat
 
 	def prep_data(self, df):
 		# lower case and remove spaces
@@ -130,22 +124,35 @@ class RecommenderEngine():
 			for j in range(i):
 
 				score = 0
+				feat_present = 0
 
 				reg2 = data[data['Artikelid'] == d[j]]['Ursprung'].to_string(index = False)
 				check_reg = (check_reg and reg2 != "")
 
 				if check_descr:
-					score += self.sim_descr(d1, data, d[j])
+					val = self.sim_descr(d1, data, d[j])
+					if val != False:
+						score += val
+						feat_present += 1
 
 				if check_reg:
-					score += sim_regions(reg1, reg2)
+					val = sim_regions(reg1, reg2)
+					if val != False:
+						score += val
+						feat_present += 1
 
 				if check_year:
-					score += self.sim_year(y1, reg1, data, d[j], reg2)
+					val = self.sim_year(y1, reg1, data, d[j], reg2)
+					if val != False:
+						score += val
+						feat_present += 1
 
-				#sim_mat[i][j] = self.calc_sim(data, year_data, d[i], d1, reg1, y1, d[j])
-				sim_mat[i][j] = score/3
+				if feat_present == 0:
+					sim_mat[i][j] = 0
+				else:
+					sim_mat[i][j] = score/feat_present
 				sim_mat[j][i] = sim_mat[i][j]
+			
 			print(i)
 
 		return sim_mat
@@ -155,7 +162,7 @@ class RecommenderEngine():
 		if d2 != "":
 			return sim_wines(d1,d2)
 		else:
-			return 0
+			return False
 
 	# def sim_reg(reg1, reg2):
 	# 	if reg2 != "":
@@ -168,7 +175,7 @@ class RecommenderEngine():
 		if y2 != "" and reg2 != "":
 			return sim_years(y1, y2, reg1, reg2, self.year_data)
 		else:
-			return 0
+			return False
 
 
 	def calc_sim(self, data, year_data, wine1, d1, reg1, y1, wine2):
@@ -220,19 +227,21 @@ class RecommenderEngine():
 
 	# takes article number as input and outputs a list of recommended article numbers
 	def recommend(self, art_number):
-		# get variables
-		indices = self.indices
-		sim = self.sim_mat
+		# # get variables
+		# indices = self.indices
+		# sim = self.sim_mat
 		data = self.clean_data
 
-		# get index of wine
-		idx = indices[art_number]
+		# # get index of wine
+		# idx = indices[art_number]
 
-		# Get the pairwise similarity scores of all wines with that wine
-		sim_scores = list(enumerate(sim[idx]))
+		# # Get the pairwise similarity scores of all wines with that wine
+		# sim_scores = list(enumerate(sim[idx]))
 
-		# Sort the wines based on the similarity scores
-		sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
+		# # Sort the wines based on the similarity scores
+		# sim_scores = sorted(sim_scores, key = lambda x: x[1], reverse = True)
+
+		sim_scores = self.get_scores(art_number)
 
 		# Get the scores of the 5 most similar wines
 		sim_scores = sim_scores[1:6]
@@ -267,13 +276,11 @@ class RecommenderEngine():
 		return sim_scores
 
 
-	def test_rs(self):
-		nr_test = 1000
+	def test_rs(self, nr_test):
 		# ten wines to test
 		#test = [7904, 7424, 7602, 77152, 5352, 2800]
 
 		artid = pd.read_csv('./data/artnr_artid.csv')
-
 		ids = artid['Artikelid']
 
 		# randomly sample 10 wines to test
@@ -287,6 +294,7 @@ class RecommenderEngine():
 		cov = []
 		av_sim = 0
 		div = 0
+		thres_cov = 0
 
 		# run recommender for each wine
 		for wine in ids:
@@ -296,6 +304,7 @@ class RecommenderEngine():
 			sim_score = self.get_scores(wine)
 			score = zip(*sim_score[1:6])
 			#div.append(self.diversity(result.tolist()))
+			thres_cov += self.coverage_thres(wine)
 			div += self.diversity(result.tolist())
 			#print("-----------")
 			#c.append(self.coverage_thres(wine))
@@ -306,6 +315,9 @@ class RecommenderEngine():
 				#res.append(artnr)
 				if artnr not in cov:
 					cov.append(artnr)
+		sim_score = zip(*sim_score)
+		plt.plot(sim_score[1])
+		plt.show()
 		
 			# print("For article id: " + str(get_nr(artid, wine)))
 			# print("Recommendations: ")
@@ -322,6 +334,7 @@ class RecommenderEngine():
 		tot_cov = self.coverage(cov)
 		av_sim = av_sim/nr_test
 		av_div = div/nr_test
+		av_cov = thres_cov/nr_test
 
 		print("Testvalues for " + str(nr_test) + " items")
 		print("Average similarity: ")
@@ -330,20 +343,24 @@ class RecommenderEngine():
 		print("Coverage: ")
 		print(tot_cov)
 		print("-----------")
+		print("Average items above 0.2 similarity: ")
+		print(av_cov)
+		print("-----------")
 		print("Average diversity: ")
 		print(av_div)
 
-		return 0
+		return av_sim, tot_cov, av_div
 
 	# coverage
 	def coverage(self, items):
 		rec_items = float(len(items))
 		tot_items = float(len(self.indices))
+		print(tot_items)
 		return rec_items/tot_items
 
 	# calculate coverage
 	def coverage_thres(self, artid):
-		threshold = 0.29
+		threshold = 0.2
 
 		# get all similarity scores for a certain wine
 		sim_scores = self.get_scores(artid)
@@ -362,7 +379,7 @@ class RecommenderEngine():
 		for i in artids:
 			for j in artids:
 				if i != j:
-					score += self.sim_mat[self.indices[i], self.indices[j]]
+					score += 1 - self.comp[self.indices[i], self.indices[j]]
 					num += 1
 
 		av_score = score/num # calculate average
@@ -371,6 +388,24 @@ class RecommenderEngine():
 
 
 if __name__ == '__main__':
-	rs = RecommenderEngine()
-	rs.test_rs()
+
+	# test setup
+	w_mod = np.arange(0.0, 1.0, 0.1)
+	nr_tests = 1
+	sim = []
+	cov = []
+	div = []
+
+	# 	rs = RecommenderEngine(w, (1-w))
+	# 	s, c, d = rs.test_rs(nr_tests)
+	# 	sim.append(s)
+	# 	cov.append(c)
+	# 	div.append(d)
+
+	rs = RecommenderEngine(0.5, 0.5)
+	sim, cov, div = rs.test_rs(nr_tests)
+
+	print(sim)
+	print(cov)
+	print(div)
 

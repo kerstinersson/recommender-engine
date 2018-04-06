@@ -78,7 +78,7 @@ class RecommenderEngine():
 		return self.df['Artikelid'].iloc[wine_indices]
 
 	def test_rs(self):
-		nr_test = 1000
+		nr_test = 1
 		# ten wines to test
 		#test = [7904, 7424, 7602, 77152, 5352, 2800]
 
@@ -97,17 +97,16 @@ class RecommenderEngine():
 		cov = []
 		av_sim = 0
 		div = 0
+		thres_cov = 0
 
 		# run recommender for each wine
 		for wine in ids:
-			#res = []
-			#c = []
 			result = self.recommend(wine)
 			score = zip(*self.sim_scores[1:6])
 			#div.append(self.diversity(result.tolist()))
 			div += self.diversity(result.tolist())
 			#print("-----------")
-			#c.append(self.coverage_thres(wine))
+			thres_cov += self.coverage_thres(wine)
 			#av_sim.append(np.mean(score[1]))
 			av_sim += np.mean(score[1])
 			for item in result: 
@@ -116,9 +115,14 @@ class RecommenderEngine():
 				if artnr not in cov:
 					cov.append(artnr)
 
+		sim_score = zip(*self.sim_scores)
+		plt.plot(sim_score[1])
+		plt.show()
+
 		tot_cov = self.coverage(cov)
 		av_sim = av_sim/nr_test
 		av_div = div/nr_test
+		av_cov = thres_cov/nr_test
 
 		print("Testvalues for " + str(nr_test) + " items")
 		print("Average similarity: ")
@@ -126,6 +130,9 @@ class RecommenderEngine():
 		print("-----------")
 		print("Coverage: ")
 		print(tot_cov)
+		print("-----------")
+		print("Average items above 0.2 similarity: ")
+		print(av_cov)
 		print("-----------")
 		print("Average diversity: ")
 		print(av_div)
@@ -170,9 +177,16 @@ class RecommenderEngine():
 
 		# return 0
 
+	# coverage
+	def coverage(self, items):
+		rec_items = float(len(items))
+		tot_items = float(len(self.indices))
+		print(tot_items)
+		return rec_items/tot_items
+
 	# calculate coverage
-	def coverage(self, artid):
-		threshold = 0.29
+	def coverage_thres(self, artid):
+		threshold = 0.2
 
 		# count all scores above a certain value
 		above_thres = filter(lambda x: x[1] > threshold, self.sim_scores)
@@ -196,12 +210,10 @@ class RecommenderEngine():
 		for i in artids:
 			for j in artids:
 				if i != j:
-					score += self.sim_mat[self.indices[i], self.indices[j]]
+					score += 1 - self.sim_mat[self.indices[i], self.indices[j]]
 					num += 1
 
 		av_score = score/num # calculate average
-
-		#print(av_score)
 
 		return av_score
 
@@ -211,7 +223,7 @@ MAIN
 
 if __name__ == '__main__':
 	rs = RecommenderEngine()
-	#rs.test_rs()
+	rs.test_rs()
 # 	rec_input = 1125441 # ripasso della valpolicella
 # 	rec = recommend(rec_input)
 # 	name = get_info(data, rec_input)
