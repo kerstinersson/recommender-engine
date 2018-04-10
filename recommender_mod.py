@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 import sys
+import seaborn as sns
 
 # import utitily functions
 from utilities import *
@@ -25,7 +26,10 @@ class RecommenderEngine():
 	mod_file = './data/mod_mat.csv'
 
 	# running mode
-	train = True
+	train = False
+
+	# nr of recommendations
+	nr_rec = 10
 
 	def __init__(self, w_mod, w_cat):
 		# read csv file
@@ -159,8 +163,15 @@ class RecommenderEngine():
 
 	def sim_descr(self, d1, data, wine2):
 		d2 = data[data['Artikelid'] == wine2]['RavarorBeskrivning'].to_string(index = False)
+		runs = 0
+		score = 0
 		if d2 != "":
-			return sim_wines(d1,d2)
+			for item1 in d1: 
+				for item2 in d2: 
+					score += sim_wines(item1,item2)
+					runs += 1
+
+			return score/runs
 		else:
 			return False
 
@@ -244,15 +255,17 @@ class RecommenderEngine():
 		sim_scores = self.get_scores(art_number)
 
 		# Get the scores of the 5 most similar wines
-		sim_scores = sim_scores[1:6]
+		sim_scores = sim_scores[1:(self.nr_rec+1)]
 
 		# Get the wine indices
 		wine_indices = [i[0] for i in sim_scores]
 
-		#i = 0
+		i = 0
+		artid = pd.read_csv('./data/artnr_artid.csv')
 
 		# for ind in wine_indices:
-		# 	print("Recommended: " + str(data['Artikelid'].iloc[ind]) + " (score:" + str(sim_scores[i]) + ")")
+		# 	artnr = get_nr(artid, data['Artikelid'].iloc[ind])
+		# 	print("Recommended: " + str(artnr) + " (score:" + str(sim_scores[i]) + ")")
 		# 	i += 1
 
 		# Return the top 5 most similar wines
@@ -302,7 +315,7 @@ class RecommenderEngine():
 			#c = []
 			result = self.recommend(wine)
 			sim_score = self.get_scores(wine)
-			score = zip(*sim_score[1:6])
+			score = zip(*sim_score[1:(self.nr_rec+1)])
 			#div.append(self.diversity(result.tolist()))
 			thres_cov += self.coverage_thres(wine)
 			div += self.diversity(result.tolist())
@@ -316,8 +329,8 @@ class RecommenderEngine():
 				if artnr not in cov:
 					cov.append(artnr)
 		sim_score = zip(*sim_score)
-		plt.plot(sim_score[1])
-		plt.show()
+		#plt.plot(sim_score[1])
+		#plt.show()
 		
 			# print("For article id: " + str(get_nr(artid, wine)))
 			# print("Recommendations: ")
@@ -336,18 +349,18 @@ class RecommenderEngine():
 		av_div = div/nr_test
 		av_cov = thres_cov/nr_test
 
-		print("Testvalues for " + str(nr_test) + " items")
-		print("Average similarity: ")
-		print(av_sim)
-		print("-----------")
-		print("Coverage: ")
-		print(tot_cov)
+		# print("Testvalues for " + str(nr_test) + " items")
+		# print("Average similarity: ")
+		# print(av_sim)
+		# print("-----------")
+		# print("Coverage: ")
+		# print(tot_cov)
 		print("-----------")
 		print("Average items above 0.2 similarity: ")
 		print(av_cov)
 		print("-----------")
-		print("Average diversity: ")
-		print(av_div)
+		# print("Average diversity: ")
+		# print(av_div)
 
 		return av_sim, tot_cov, av_div
 
@@ -386,26 +399,73 @@ class RecommenderEngine():
 
 		return av_score
 
+	def plot_heat(self):
+		data = self.sim_mat
+		ax = sns.heatmap(data, xticklabels=500, yticklabels=500)
+		#ax = sns.heatmap(data)
+		plt.show()
 
 if __name__ == '__main__':
 
-	# test setup
-	w_mod = np.arange(0.0, 1.0, 0.1)
-	nr_tests = 1
+	w_test = True
+	nr_rec_test = False
+
 	sim = []
 	cov = []
 	div = []
 
-	# 	rs = RecommenderEngine(w, (1-w))
-	# 	s, c, d = rs.test_rs(nr_tests)
-	# 	sim.append(s)
-	# 	cov.append(c)
-	# 	div.append(d)
+	nr_tests = 1000
 
-	rs = RecommenderEngine(0.5, 0.5)
-	sim, cov, div = rs.test_rs(nr_tests)
+	if w_test:
+		# test setup
+		w_mod = np.arange(0.05, 1.0, 0.05)
 
-	print(sim)
-	print(cov)
-	print(div)
+		for w in w_mod:
+			rs = RecommenderEngine(w, (1-w))
+			s, c, d = rs.test_rs(nr_tests)
+			sim.append(s)
+			cov.append(c)
+			div.append(d)
+
+		print("----------")
+		print("Test run " + str(nr_tests) + " times.")
+		print("----------")
+		print("Average similarity for w = 0, 0.1, ..., 1.0")
+		print(sim)
+		print("----------")
+		print("Average coverage for w = 0, 0.1, ..., 1.0")
+		print(cov)
+		print("----------")
+		print("Average diversity for w = 0, 0.1, ..., 1.0")
+		print(div)
+		print("----------")
+
+	elif nr_rec_test:
+		rs = RecommenderEngine(0.3, 0.7)
+		s, c, d = rs.test_rs(nr_tests)
+
+		sim.append(s)
+		cov.append(c)
+		div.append(d)
+
+		print("----------")
+		print("Test run " + str(nr_tests) + " times.")
+		print("----------")
+		print("Average similarity for 20 recommendations")
+		print(sim)
+		print("----------")
+		print("Average coverage for 20 recommendations")
+		print(cov)
+		print("----------")
+		print("Average diversity for 20 recommendations")
+		print(div)
+		print("----------")
+
+	else:
+		rs = RecommenderEngine(0.3, 0.7)
+		#sim, cov, div = rs.test_rs(nr_tests)
+		#rs.plot_heat()
+		artid = pd.read_csv('./data/artnr_artid.csv')
+		item = get_id(artid, 2800)
+		rs.recommend(item)
 
