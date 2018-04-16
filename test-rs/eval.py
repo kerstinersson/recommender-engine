@@ -6,10 +6,10 @@ import pandas as pd
 # import utitily functions
 from utilities import *
 from recommender_cat import *
-from recommender_cat import * 
+from recommender_mod import * 
 
 
-def test_rs():
+def test_rs(rs):
 	# ten wines to test
 	test = [7904, 7424, 7602, 77152, 5352, 2800]
 
@@ -22,11 +22,34 @@ def test_rs():
 	# run recommender for each wine
 	for wine in ids:
 		res = []
-		result = recommend(wine)
+		cov = []
+		result = rs.recommend(wine)
+		cov.append(coverage(rs,wine))
 		for item in result: 
 			res.append(get_nr(artid, item))
-		print(res)
+	
+	print("Recommendations: ")
+	print(res)
+	print("-----------")
+	print("Coverage: ")
+	print(cov)
 
+	return 0
+
+# calculate coverage
+def coverage(rs, artid):
+	threshold = 0.1
+
+	# get all similarity scores for a certain wine
+	sim_scores = rs.get_scores(artid)
+
+	# count all scores above a certain value
+	above_thres = sim_scores[numpy.where(sim_scores > threshold)]
+
+	return len(above_thres)/len(sim_scores)
+
+# calculate diversity
 
 if __name__ == '__main__':
-	test_rs()
+	#rs = RecommenderEngine()
+	test_rs(rs)
