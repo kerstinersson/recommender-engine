@@ -55,7 +55,7 @@ class RecommenderEngine():
 			self.mod_mat = mod.as_matrix(columns = None)
 
 		self.sim_mat = self.mod_mat * w_mod + self.sim * w_cat
-
+    
 	def prep_data(self, df):
 		# lower case and remove spaces
 		features_to_clean = ['Ursprung', 'Producent', 'Typ', 'Varugrupp']
@@ -94,6 +94,7 @@ class RecommenderEngine():
 		indices = dict(zip(artIds,ids))
 
 		return indices
+
 
 	def mod_matrix(self):
 		# get data
@@ -270,7 +271,7 @@ class RecommenderEngine():
 
 		# Return the top 5 most similar wines
 		return data['Artikelid'].iloc[wine_indices]
-
+  
 	def get_scores(self, art_number):
 		# get variables
 		indices = self.indices
@@ -467,5 +468,4 @@ if __name__ == '__main__':
 		#rs.plot_heat()
 		artid = pd.read_csv('./data/artnr_artid.csv')
 		item = get_id(artid, 2800)
-		rs.recommend(item)
-
+		rs.recommend(item
